@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5CC26E">
+<style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Two Jays Bar Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sticky search + filter rail over a recipe card grid; tapping a card opens a spec sheet (bottom sheet on phone, side panel on desktop) */
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --ink:#0B0B0B; --muted:#545B56; --line:#E0E5E1;
+  --accent:#5CC26E; --on-accent:#0B0B0B; --on-accent-2:#FFFFFF;
+  --brass:#2F8A43; --brass-soft:#E9F7EC; --glass:#F1F4F2;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B0B0B; --surface:#151715; --ink:#FFFFFF; --muted:#A6ADA8; --line:#2A2E2B;
+  --accent:#5CC26E; --brass:#7AD889; --brass-soft:#15251A; --glass:#1E221F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0B0B; --surface:#151715; --ink:#FFFFFF; --muted:#A6ADA8; --line:#2A2E2B;
+  --accent:#5CC26E; --brass:#7AD889; --brass-soft:#15251A; --glass:#1E221F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px}
+header.top{background:var(--accent);color:var(--on-accent);padding-block:28px 22px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--display);font-weight:900;font-size:clamp(40px,8vw,68px);line-height:.9;margin:0;letter-spacing:.01em;text-transform:uppercase}
+.brand h1 span{color:var(--on-accent-2)}
+.brand p{margin:0;color:var(--on-accent);font-weight:500;opacity:.8}
+.tabs{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap}
+.tab{font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.03em;background:none;border:0;color:var(--on-accent);opacity:.65;padding:4px 8px 8px;border-bottom:4px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{opacity:1;border-color:var(--on-accent)}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:10px}
+.search{width:100%;font:inherit;font-size:16px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.search:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-top:10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font:600 13px var(--body);padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.tab:focus-visible{outline-color:var(--on-accent)!important}
+.chip:focus-visible,.tab:focus-visible,.card:focus-visible,.close:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:18px 48px}
+.notice{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--brass);border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:14px}
+.notice b{color:var(--brass)}
+.section-h{font-family:var(--display);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.02em;margin:26px 0 10px;display:flex;align-items:baseline;gap:10px}
+.section-h small{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 10px 12px;cursor:pointer;color:inherit;font:inherit;min-width:0}
+.card:hover{border-color:var(--ink)}
+.card.sig{border-color:var(--brass);background:linear-gradient(var(--brass-soft),var(--surface) 55%)}
+.card svg{width:56px;height:72px}
+.card .nm{font-family:var(--display);font-weight:800;font-size:19px;line-height:1.05;text-transform:uppercase;letter-spacing:.02em}
+.card .sub{font-size:12px;color:var(--muted);line-height:1.3}
+.empty{color:var(--muted);padding:30px 0;text-align:center}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(5,10,20,.45);z-index:20}
+.sheet{position:fixed;z-index:21;background:var(--surface);color:var(--ink);overflow-y:auto;
+  left:0;right:0;bottom:0;max-height:88%;border-radius:18px 18px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom,0px))}
+@media (min-width:820px){.sheet{left:auto;top:0;bottom:0;width:440px;max-height:none;border-radius:0;padding:28px 28px 40px}}
+.sheet-head{display:flex;gap:14px;align-items:center}
+.sheet-head svg{width:70px;height:90px;flex:none}
+.sheet h2{font-family:var(--display);font-weight:900;font-size:34px;line-height:.95;margin:0;text-transform:uppercase;text-wrap:balance}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:var(--glass);color:var(--muted);margin-top:6px}
+.tag.sig{background:var(--brass-soft);color:var(--brass)}
+.close{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;cursor:pointer;line-height:1}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:18px 0 6px;font-size:14px}
+.meta dt{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:15px}
+.meta dd{margin:0;color:var(--muted)}
+.box{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px}
+.box h3{font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px}
+.ing{display:grid;grid-template-columns:1fr auto;gap:0 12px}
+.ing div{padding:7px 0;border-bottom:1px dashed var(--line)}
+.ing div:nth-last-child(-n+2){border-bottom:0}
+.ing .amt{font-weight:700;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+ol.dir{margin:0;padding-left:20px}
+ol.dir li{padding:3px 0}
+.note{font-size:13px;color:var(--muted);margin-top:12px}
+.note.warn{color:var(--brass);font-weight:600}
+/* prep page */
+.prep{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.prep .box{background:var(--surface);margin:0}
+.prep p{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.swap{font-size:14px}
+.swap div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.swap div:last-child{border:0}
+.swap span:last-child{font-weight:600;text-align:right}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><h1>Two <span>Jays</span> Bar Book</h1></div>
+</div></header>
+
+<div class="bar" id="bar">
+  <div class="wrap">
+    <input class="search" id="q" type="search" placeholder="Search drinks or ingredients (e.g. jameson, mint, red bull)" autocomplete="off">
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+
+<main class="wrap" id="main"></main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-title"></aside>
+
+<script>
+const NO_MIX="No sour or margarita mix in house: this build uses fresh citrus and syrup.";
+// [name, category, spirits[], glass, liquidColor, garnish, ingredients[[item,amt]], directions[], note?]
+const D=[
+// ---------- SIGNATURES ----------
+["Cala-Me Maybe","sig",["gin"],"coupe","#E9D27A","Lime wheel",[["The Botanist Gin","1.5 oz"],["St. Elderflower Liqueur","0.5 oz"],["Calamansi Juice","0.75 oz"],["Brown Sugar Simple Syrup","0.5 oz"]],["Add all ingredients to shaker tin with ice","Shake hard 10–12 seconds","Double strain into chilled coupe","Garnish with lime wheel"]],
+["Peaches Be Crazy","sig",["tequila"],"highball","#F2B36B","Lime wedge",[["Centenario Tequila","1.5 oz"],["Peach Simple Syrup","0.75 oz"],["Lime Juice","0.75 oz"],["Ginger Beer","Top (~3 oz)"]],["Fill highball with ice","Shake tequila, peach syrup and lime with ice","Strain into glass","Top with ginger beer, quick stir","Garnish with lime wedge"]],
+["Mint to Be","sig",["rum"],"highball","#F4C34E","Mint sprig",[["Bacardi Rum","1.5 oz"],["Lime Juice","0.75 oz"],["Passionfruit (purée or syrup)","0.75 oz"],["Fresh Mint","8–10 leaves"],["Simple Syrup","0.25 oz (to taste)"],["Soda Water","Splash"]],["Gently press mint in shaker (don't shred it)","Add rum, lime, passionfruit, simple and ice","Shake and strain over fresh ice in highball","Top with a splash of soda","Slap mint sprig and garnish"]],
+["Rum, Forrest, Rum","sig",["rum"],"rocks","#D9B46A","Lime wheel",[["Bacardi Rum","2 oz"],["Calamansi Juice","0.75 oz"],["Brown Sugar Simple Syrup","0.75 oz"]],["Add all ingredients to shaker with ice","Shake hard","Strain over fresh ice in rocks glass","Garnish with lime wheel"]],
+["The Golden Gimmy","sig",["gin"],"coupe","#CFE08A","Basil leaf",[["The Botanist Gin","2 oz"],["Lime Juice","0.75 oz"],["Agave","0.5 oz"],["Fresh Basil","3–4 leaves"]],["Lightly press basil in shaker","Add gin, lime, agave and ice","Shake hard","Double strain into chilled coupe (keeps basil bits out)","Float a basil leaf"]],
+["Dragon Slayer","sig",["mezcal","tequila"],"rocks","#E2564E","Jalapeño wheel",[["400 Conejos Mezcal","1.5 oz"],["Triple Sec","0.5 oz"],["Lime Juice","0.75 oz"],["Strawberry Simple Syrup","0.5 oz"],["Jalapeño","2 slices (muddled)"]],["Muddle jalapeño slices in shaker (more slices = more heat)","Add mezcal, triple sec, lime, strawberry syrup and ice","Shake hard","Double strain over fresh ice in rocks glass","Garnish with jalapeño wheel"]],
+["Respect Your Elders","sig",["vodka"],"coupe","#F19AA6","Lemon twist",[["Tito's Vodka","1.5 oz"],["St. Elderflower Liqueur","0.5 oz"],["Strawberry Simple Syrup","0.5 oz"],["Lemon Juice","0.75 oz"]],["Add all ingredients to shaker with ice","Shake hard","Double strain into chilled coupe","Express lemon twist over top and drop in"]],
+["In Two Jays Fashioned","sig",["whiskey"],"rocks","#B4652A","Orange peel",[["Bourbon","2 oz"],["Brown Sugar & Peach Simple Syrup","0.25 oz"],["Walnut Bitters","3 dashes"]],["Add syrup and bitters to mixing glass","Add bourbon and ice, stir 20–30 seconds","Strain over large format ice cube in rocks glass","Express orange peel over top and garnish"]],
+// ---------- CLASSICS ----------
+["Margarita","classic",["tequila"],"rocks","#E4E79A","Lime wheel, salt rim (ask)",[["Blanco Tequila","2 oz"],["Lime Juice","1 oz"],["Triple Sec","0.75 oz"],["Agave or Simple","0.25 oz"]],["Salt half the rim if guest wants salt","Shake all ingredients with ice","Strain over fresh ice","Garnish with lime wheel"],NO_MIX],
+["Spicy Margarita","classic",["tequila"],"rocks","#C9E08A","Jalapeño wheel, Tajín rim (ask)",[["Blanco Tequila","2 oz"],["Lime Juice","1 oz"],["Triple Sec","0.5 oz"],["Agave","0.5 oz"],["Jalapeño","2 slices (muddled)"]],["Muddle jalapeño in shaker","Add the rest plus ice and shake","Double strain over fresh ice","Garnish with jalapeño wheel"],NO_MIX],
+["Strawberry Margarita","classic",["tequila"],"rocks","#EF7C86","Lime wheel, sugar rim (ask)",[["Blanco Tequila","2 oz"],["Lime Juice","1 oz"],["Triple Sec","0.5 oz"],["Strawberry Simple Syrup","0.75 oz"]],["Shake all ingredients with ice","Strain over fresh ice","Garnish with lime wheel"],"Uses the house strawberry syrup from Dragon Slayer / Respect Your Elders."],
+["Paloma","classic",["tequila"],"highball","#F5B7A6","Lime wedge, salt rim (ask)",[["Blanco Tequila","2 oz"],["Lime Juice","0.5 oz"],["Grapefruit Soda","Top"]],["Build tequila and lime over ice in highball","Top with grapefruit soda","Quick stir, garnish lime wedge"]],
+["Tequila Sunrise","classic",["tequila"],"highball","#F28B36","Orange slice, cherry",[["Tequila","1.5 oz"],["Orange Juice","4 oz"],["Grenadine","0.5 oz"]],["Build tequila and OJ over ice","Slowly pour grenadine down the side so it sinks","Garnish, don't stir"]],
+["Old Fashioned","classic",["whiskey"],"rocks","#B4652A","Orange peel, cherry",[["Bourbon or Rye","2 oz"],["Simple Syrup","0.25 oz"],["Angostura Bitters","2–3 dashes"]],["Add syrup and bitters to mixing glass","Add whiskey and ice, stir 20–30 seconds","Strain over large cube","Express orange peel, add cherry"]],
+["Manhattan","classic",["whiskey"],"coupe","#8C3A22","Cherry",[["Rye or Bourbon","2 oz"],["Sweet Vermouth","1 oz"],["Angostura Bitters","2 dashes"]],["Stir all with ice 20–30 seconds","Strain into chilled coupe","Garnish with cherry"]],
+["Whiskey Sour","classic",["whiskey"],"rocks","#E1B260","Cherry, orange slice",[["Bourbon","2 oz"],["Lemon Juice","0.75 oz"],["Simple Syrup","0.75 oz"],["Egg White (optional)","1"]],["If using egg white, dry shake (no ice) first","Add ice and shake hard","Strain over fresh ice","Garnish"],NO_MIX],
+["Amaretto Sour","classic",["liqueur"],"rocks","#E09A47","Cherry, orange slice",[["Amaretto","1.5 oz"],["Bourbon (optional, for strength)","0.75 oz"],["Lemon Juice","1 oz"],["Simple Syrup","0.25 oz"]],["Shake all with ice","Strain over fresh ice","Garnish"],NO_MIX],
+["Moscow Mule","classic",["vodka"],"mule","#B87333","Lime wedge",[["Vodka","1.5 oz"],["Lime Juice","0.5 oz"],["Ginger Beer","Top (~4 oz)"]],["Fill mule mug with ice","Add vodka and lime","Top with ginger beer","Garnish with lime wedge"],"Kentucky Mule = bourbon. Mexican Mule = tequila. Irish Mule = Jameson."],
+["Cosmopolitan","classic",["vodka"],"martini","#E8607A","Lime wheel or orange twist",[["Citrus Vodka","1.5 oz"],["Triple Sec","0.5 oz"],["Lime Juice","0.5 oz"],["Cranberry Juice","1 oz"]],["Shake all with ice","Strain into chilled martini glass","Garnish"]],
+["Lemon Drop","classic",["vodka"],"martini","#F1E27A","Sugar rim, lemon twist",[["Citrus Vodka","2 oz"],["Triple Sec","0.5 oz"],["Lemon Juice","0.75 oz"],["Simple Syrup","0.5 oz"]],["Sugar the rim","Shake all with ice","Strain into chilled martini glass"]],
+["Martini","classic",["gin","vodka"],"martini","#EEF1E6","Olives or lemon twist",[["Gin or Vodka","2.5 oz"],["Dry Vermouth","0.5 oz"]],["Stir with ice 30 seconds","Strain into chilled martini glass","Garnish"],"Dirty: add 0.25–0.5 oz olive brine. Dry: less vermouth. Ask shaken or stirred."],
+["Espresso Martini","classic",["vodka"],"martini","#3B2418","3 coffee beans",[["Vodka","1.5 oz"],["Coffee Liqueur (Kahlúa)","0.75 oz"],["Fresh Espresso / Cold Brew Concentrate","1 oz"],["Simple Syrup","0.25 oz"]],["Shake very hard with ice (that builds the foam)","Strain into chilled martini glass","Float 3 coffee beans"]],
+["Negroni","classic",["gin"],"rocks","#C8382E","Orange peel",[["Gin","1 oz"],["Campari","1 oz"],["Sweet Vermouth","1 oz"]],["Stir all with ice","Strain over large cube","Garnish orange peel"]],
+["Aperol Spritz","classic",["liqueur"],"wine","#F28A3C","Orange slice",[["Prosecco","3 oz"],["Aperol","2 oz"],["Soda Water","1 oz"]],["Fill wine glass with ice","Add prosecco, then Aperol, then soda","Gentle stir, garnish orange slice"]],
+["Mojito","classic",["rum"],"highball","#D7EBB4","Mint sprig, lime wheel",[["White Rum","2 oz"],["Lime Juice","0.75 oz"],["Simple Syrup","0.75 oz"],["Fresh Mint","8–10 leaves"],["Soda Water","Top"]],["Gently press mint with simple in glass","Add rum, lime and ice","Top with soda, stir up from bottom","Garnish"]],
+["Daiquiri","classic",["rum"],"coupe","#EDEBC8","Lime wheel",[["White Rum","2 oz"],["Lime Juice","1 oz"],["Simple Syrup","0.75 oz"]],["Shake all with ice","Double strain into chilled coupe"]],
+["Mai Tai","classic",["rum"],"rocks","#D98A3D","Mint sprig, lime wheel",[["White Rum","1 oz"],["Dark Rum","1 oz (float)"],["Orange Curaçao / Triple Sec","0.5 oz"],["Orgeat","0.5 oz"],["Lime Juice","0.75 oz"]],["Shake everything except dark rum","Strain over crushed or fresh ice","Float dark rum on top, garnish"]],
+["Piña Colada","classic",["rum"],"highball","#F6E7B0","Pineapple wedge, cherry",[["White Rum","2 oz"],["Cream of Coconut","1.5 oz"],["Pineapple Juice","1.5 oz"],["Lime Juice","0.5 oz"]],["Shake hard with ice (or blend with 1 cup ice)","Pour into glass","Garnish"]],
+["Dark 'n Stormy","classic",["rum"],"highball","#7A4A2A","Lime wedge",[["Ginger Beer","4 oz"],["Lime Juice","0.5 oz"],["Dark Rum (Goslings)","2 oz (float)"]],["Fill glass with ice, add ginger beer and lime","Float dark rum on top"]],
+["Tom Collins","classic",["gin"],"highball","#F2F0D2","Lemon wheel, cherry",[["Gin","2 oz"],["Lemon Juice","1 oz"],["Simple Syrup","0.75 oz"],["Soda Water","Top"]],["Shake gin, lemon, simple with ice","Strain over fresh ice in highball","Top with soda, garnish"],"Vodka Collins: swap gin for vodka."],
+["Gimlet","classic",["gin","vodka"],"coupe","#DDEBB0","Lime wheel",[["Gin or Vodka","2 oz"],["Lime Juice","0.75 oz"],["Simple Syrup","0.75 oz"]],["Shake with ice","Strain into chilled coupe"]],
+["French 75","classic",["gin"],"flute","#F3E7B1","Lemon twist",[["Gin","1 oz"],["Lemon Juice","0.5 oz"],["Simple Syrup","0.5 oz"],["Prosecco / Champagne","Top (~3 oz)"]],["Shake gin, lemon, simple with ice","Strain into flute","Top with bubbles, garnish"]],
+["Long Island Iced Tea","classic",["vodka","gin","rum","tequila"],"highball","#B87A3E","Lemon wedge",[["Vodka","0.5 oz"],["Gin","0.5 oz"],["White Rum","0.5 oz"],["Tequila","0.5 oz"],["Triple Sec","0.5 oz"],["Lemon Juice","0.75 oz"],["Simple Syrup","0.5 oz"],["Cola","Splash to top"]],["Build all but cola over ice in highball (or quick shake)","Top with splash of cola until it looks like iced tea","Garnish lemon wedge"],NO_MIX+" Long Beach = cranberry instead of cola."],
+["Mimosa","classic",["wine"],"flute","#F7C24E","Orange slice (optional)",[["Prosecco / Champagne","3 oz"],["Orange Juice","2 oz"]],["Pour bubbles first, then OJ (less foam-over)"]],
+["Irish Coffee","classic",["whiskey"],"wine","#4A2E1C","Whipped cream",[["Irish Whiskey","1.5 oz"],["Brown Sugar Simple Syrup","0.5 oz"],["Hot Coffee","4 oz"],["Lightly Whipped Cream","Float"]],["Warm the mug with hot water, dump","Add syrup, whiskey, coffee and stir","Float cream over back of spoon"]],
+// ---------- MORE CLASSICS (bar calls) ----------
+["Malibu Bay Breeze","college",["rum"],"highball","#F09AA0","Pineapple wedge",[["Malibu","1.5 oz"],["Pineapple Juice","2 oz"],["Cranberry Juice","2 oz"]],["Build over ice, stir"]],
+["Sex on the Beach","college",["vodka"],"highball","#F27A5E","Orange slice",[["Vodka","1.5 oz"],["Peach Schnapps","0.5 oz"],["Orange Juice","2 oz"],["Cranberry Juice","2 oz"]],["Build over ice, stir"]],
+["Screwdriver","college",["vodka"],"highball","#F7B238","Orange slice",[["Vodka","1.5 oz"],["Orange Juice","Top"]],["Build over ice"]],
+["Adios M.F. (AMF)","college",["vodka","gin","rum","tequila"],"highball","#2FA7E0","Lemon wedge",[["Vodka","0.5 oz"],["Gin","0.5 oz"],["White Rum","0.5 oz"],["Tequila","0.5 oz"],["Blue Curaçao","0.5 oz"],["Lemon Juice","0.75 oz"],["Simple Syrup","0.5 oz"],["Sprite","Top"]],["Build spirits, lemon and simple over ice","Top with Sprite, stir","Garnish lemon wedge"],NO_MIX],
+["Tokyo Tea","college",["vodka","gin","rum","tequila"],"highball","#7FD15A","Cherry, lemon",[["Vodka","0.5 oz"],["Gin","0.5 oz"],["White Rum","0.5 oz"],["Tequila","0.5 oz"],["Midori","0.5 oz"],["Lemon Juice","0.75 oz"],["Simple Syrup","0.5 oz"],["Sprite","Top"]],["Build over ice, top with Sprite"],NO_MIX],
+["Trash Can","college",["vodka","gin","rum"],"highball","#3C8FD6","Red Bull can, upside down",[["Vodka","0.5 oz"],["Gin","0.5 oz"],["White Rum","0.5 oz"],["Peach Schnapps","0.5 oz"],["Blue Curaçao","0.5 oz"],["Red Bull","1 can"]],["Build liquors over ice in tall glass","Open Red Bull and flip it upside down into the glass so it drains as they drink"]],
+["Mind Eraser","college",["vodka"],"rocks","#3B2A22","Straw",[["Coffee Liqueur (Kahlúa)","1 oz"],["Vodka","1 oz"],["Soda Water","Top"]],["Layer Kahlúa, then vodka over ice","Top with soda","Serve with straw, meant to be drunk fast through the straw"]],
+// ---------- SHOTS ----------
+["Green Tea Shot","shot",["whiskey"],"shot","#C8D86A","",[["Jameson","0.5 oz"],["Peach Schnapps","0.5 oz"],["Lemon Juice","0.25 oz"],["Simple Syrup","0.25 oz"],["Sprite","Splash"]],["Shake first four with ice","Strain into shot glass","Top with splash of Sprite"],NO_MIX+" Replaces 0.5 oz sour mix."],
+["White Tea Shot","shot",["vodka"],"shot","#EDEAC6","",[["Vodka","0.5 oz"],["Peach Schnapps","0.5 oz"],["Lemon Juice","0.25 oz"],["Simple Syrup","0.25 oz"],["Sprite","Splash"]],["Shake first four with ice","Strain, top with Sprite"],NO_MIX],
+["Vegas Bomb","shot",["whiskey"],"shot","#E07A3C","Served with Red Bull",[["Crown Royal","0.75 oz"],["Peach Schnapps","0.75 oz"],["Cranberry Juice","Splash"],["Red Bull","~3 oz in rocks glass"]],["Shake Crown, schnapps and cran with ice; strain into shot","Pour Red Bull into rocks glass","Guest drops shot in and drinks"]],
+["Jäger Bomb","shot",["liqueur"],"shot","#3B2418","Served with Red Bull",[["Jägermeister","1.5 oz"],["Red Bull","~3 oz in rocks glass"]],["Pour Jäger into shot glass","Pour Red Bull into rocks glass","Guest drops shot in"]],
+["Lemon Drop Shot","shot",["vodka"],"shot","#F1E27A","Sugar rim",[["Citrus Vodka","1 oz"],["Triple Sec","0.25 oz"],["Lemon Juice","0.5 oz"],["Simple Syrup","0.25 oz"]],["Sugar the rim","Shake with ice, strain"]],
+["Washington Apple","shot",["whiskey"],"shot","#D04A3A","",[["Crown Royal","0.5 oz"],["Sour Apple Schnapps","0.5 oz"],["Cranberry Juice","0.5 oz"]],["Shake with ice, strain"],"Ask for this as a shot or as a rocks drink with a splash of soda."],
+["Kamikaze","shot",["vodka"],"shot","#E8EDB6","",[["Vodka","1 oz"],["Triple Sec","0.5 oz"],["Lime Juice","0.5 oz"]],["Shake with ice, strain"]],
+["Surfer on Acid","shot",["liqueur","rum"],"shot","#9C7A2E","",[["Jägermeister","0.5 oz"],["Malibu","0.5 oz"],["Pineapple Juice","0.5 oz"]],["Shake with ice, strain"]],
+["Baby Guinness","shot",["liqueur"],"shot","#2A1A12","",[["Coffee Liqueur (Kahlúa)","1 oz"],["Baileys","0.5 oz (float)"]],["Pour Kahlúa into shot glass","Float Baileys over back of a bar spoon so it sits like a beer head"]],
+["Buttery Nipple","shot",["liqueur"],"shot","#D9B06E","",[["Butterscotch Schnapps","0.75 oz"],["Baileys","0.75 oz (float)"]],["Pour butterscotch first","Float Baileys over spoon"]],
+["Pickleback","shot",["whiskey"],"shot","#C69A4A","Pickle brine chaser",[["Jameson","1.5 oz"],["Pickle Brine","1.5 oz (separate shot)"]],["Pour whiskey shot","Pour brine in a second shot glass","Shoot the whiskey, then the brine"]],
+["Fireball","shot",["whiskey"],"shot","#C2442A","",[["Fireball","1.5 oz"]],["Pour straight, chilled if you keep it in the cooler"]],
+["Tequila Shot","shot",["tequila"],"shot","#EFE6C4","Lime wedge, salt",[["Tequila","1.5 oz"]],["Pour straight","Serve with lime wedge and salt on the side"]],
+];
+const CAT={sig:"Two Jays Signatures",classic:"Classics",shot:"Shots"};
+const CATSUB={sig:"Our menu",classic:"Cocktails, highballs & bar calls",shot:"Shooters & bombs"};
+const FILTERS=[["all","All"],["sig","Signatures"],["classic","Classics"],["shot","Shots"],["vodka","Vodka"],["gin","Gin"],["rum","Rum"],["tequila","Tequila & Mezcal"],["whiskey","Whiskey"],["liqueur","Liqueur"]];
+const GL={
+ rocks:{o:"M12 30 L48 30 L45 72 L15 72 Z",l:"M13.4 42 L46.6 42 L45 72 L15 72 Z",x:""},
+ highball:{o:"M18 8 L42 8 L40 74 L20 74 Z",l:"M18.6 24 L41.4 24 L40 74 L20 74 Z",x:""},
+ coupe:{o:"M8 24 L52 24 Q50 44 30 46 Q10 44 8 24 Z",l:"M10 28 L50 28 Q47 43 30 44 Q13 43 10 28 Z",x:"M30 46 L30 70 M19 72 L41 72"},
+ martini:{o:"M6 14 L54 14 L30 42 Z",l:"M11 19 L49 19 L30 41 Z",x:"M30 42 L30 70 M19 72 L41 72"},
+ shot:{o:"M21 40 L39 40 L37 72 L23 72 Z",l:"M21.6 50 L38.4 50 L37 72 L23 72 Z",x:""},
+ mule:{o:"M13 26 L45 26 L43 72 L15 72 Z",l:"M13 26 L45 26 L43 72 L15 72 Z",x:"M45 34 Q57 35 55 48 Q53 58 44 58"},
+ wine:{o:"M16 8 L44 8 Q46 40 30 46 Q14 40 16 8 Z",l:"M15.8 24 L44.2 24 Q44 40 30 44.5 Q16 40 15.8 24 Z",x:"M30 46 L30 70 M20 72 L40 72"},
+ flute:{o:"M23 6 L37 6 L35.5 46 Q30 50 24.5 46 Z",l:"M23.4 16 L36.6 16 L35.5 46 Q30 49 24.5 46 Z",x:"M30 50 L30 72 M22 74 L38 74"}
+};
+function glass(g,c){const G=GL[g];return `<svg viewBox="0 0 60 80" aria-hidden="true"><path d="${G.o}" fill="var(--glass)"/><path d="${G.l}" fill="${c}" opacity=".92"/><path d="${G.o}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>${G.x?`<path d="${G.x}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>`:""}</svg>`}
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const R=D.map((d,i)=>({i,n:d[0],c:d[1]==="college"?"classic":d[1],s:d[2],g:d[3],col:d[4],garn:d[5],ing:d[6],dir:d[7],note:d[8]||""}));
+let filter="all",q="";
+const main=document.getElementById("main"),chips=document.getElementById("chips"),bar=document.getElementById("bar");
+chips.innerHTML=FILTERS.map(([k,l])=>`<button class="chip" id="f-${k}" data-f="${k}" aria-pressed="${k==="all"}">${l}</button>`).join("");
+chips.onclick=e=>{const b=e.target.closest(".chip");if(!b)return;filter=b.dataset.f;chips.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b));render()};
+document.getElementById("q").oninput=e=>{q=e.target.value.trim().toLowerCase();render()};
+function match(r){
+  if(filter!=="all"){ if(CAT[filter]){if(r.c!==filter)return false} else if(!r.s.includes(filter)&&!(filter==="tequila"&&r.s.includes("mezcal")))return false }
+  if(!q)return true;
+  return (r.n+" "+r.ing.map(x=>x[0]).join(" ")+" "+r.s.join(" ")+" "+r.garn).toLowerCase().includes(q);
+}
+function card(r){const sub=r.ing.filter(x=>!/juice|syrup|soda|top|sprite|cola|coke|red bull|lemonade|ginger beer/i.test(x[0]+x[1])).slice(0,2).map(x=>x[0]).join(" · ")||r.ing[0][0];
+  return `<button class="card${r.c==="sig"?" sig":""}" data-i="${r.i}">${glass(r.g,r.col)}<span class="nm">${esc(r.n)}</span><span class="sub">${esc(sub)}</span></button>`}
+function render(){
+  const list=R.filter(match);
+  if(!list.length){main.innerHTML=`<p class="empty">No drinks match “${esc(q)}”. Try a spirit or an ingredient.</p>`;return}
+  let h="";
+  for(const c of ["sig","classic","shot"]){const L=list.filter(r=>r.c===c);if(!L.length)continue;
+    if(c!=="sig")L.sort((a,b)=>a.n.localeCompare(b.n));
+    h+=`<h2 class="section-h">${CAT[c]} <small>${CATSUB[c]} · ${L.length}</small></h2><div class="grid">${L.map(card).join("")}</div>`}
+  main.innerHTML=h;
+}
+main.onclick=e=>{const b=e.target.closest(".card");if(b)open(R[+b.dataset.i])};
+const sheet=document.getElementById("sheet"),scrim=document.getElementById("scrim");let lastFocus=null;
+const GN={rocks:"Rocks Glass",highball:"Highball",coupe:"Coupe",martini:"Martini Glass",shot:"Shot Glass",mule:"Copper Mule Mug",wine:"Wine Glass",flute:"Champagne Flute"};
+function open(r){
+  lastFocus=document.activeElement;
+  sheet.innerHTML=`<button class="close" id="close" aria-label="Close">×</button>
+  <div class="sheet-head">${glass(r.g,r.col)}<div><h2 id="sheet-title">${esc(r.n)}</h2><span class="tag${r.c==="sig"?" sig":""}">${CAT[r.c]}</span></div></div>
+  <dl class="meta"><dt>Glassware</dt><dd>${GN[r.g]}</dd>${r.garn?`<dt>Garnish</dt><dd>${esc(r.garn)}</dd>`:""}</dl>
+  <div class="box"><h3>Ingredients</h3><div class="ing">${r.ing.map(([a,b])=>`<div>${esc(a)}</div><div class="amt">${esc(b)}</div>`).join("")}</div></div>
+  <div class="box"><h3>Directions</h3><ol class="dir">${r.dir.map(d=>`<li>${esc(d)}</li>`).join("")}</ol></div>
+  ${r.note?`<p class="note">${esc(r.note)}</p>`:""}`;
+  sheet.hidden=scrim.hidden=false;sheet.scrollTop=0;document.getElementById("close").onclick=close;document.getElementById("close").focus();
+}
+function close(){sheet.hidden=scrim.hidden=true;lastFocus&&lastFocus.focus()}
+scrim.onclick=close;document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!sheet.hidden)close()});
+render();
+</script>
+
+</body>
+</html>
